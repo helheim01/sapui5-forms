@@ -1,10 +1,11 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller"
-], (Controller) => {
+], function (Controller) {
     "use strict";
 
     return Controller.extend("com.devjero.forms.forms.controller.App", {
-        onInit() {
+        onInit: function () {
+            console.log("Controller inicializado");
         }
     });
 });

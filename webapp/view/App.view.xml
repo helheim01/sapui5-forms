@@ -1,6 +1,146 @@
-<mvc:View controllerName="com.devjero.forms.forms.controller.App"
+<mvc:View
+    controllerName="com.devjero.forms.forms.controller.App"
+    xmlns="sap.m"
     xmlns:mvc="sap.ui.core.mvc"
-    xmlns="sap.m">
-    <Page id="page" title="{i18n>title}">
-    </Page>
+    xmlns:core="sap.ui.core"
+    xmlns:form="sap.ui.layout.form"
+    displayBlock="true">
+
+    <!-- Aplicación principal -->
+    <App id="app">
+        <Page title="Formulario MVC">
+
+            <!-- ========================= -->
+            <!-- FORMULARIO: DATOS PERSONALES -->
+            <!-- ========================= -->
+            <VBox class="sapUiSmallMargin">
+
+                <form:SimpleForm
+                    id="simpleFormPersonal"
+                    editable="true"
+                    layout="ColumnLayout"
+                    columnsM="1"
+                    columnsL="2"
+                    columnsXL="2">
+
+                    <form:content>
+
+                        <!-- TÍTULO SECCIÓN -->
+                        <core:Title text="Information" />
+
+                        <!-- NOMBRE -->
+                        <Label text="Name" />
+                        <Input
+                            placeholder="Juan"
+                            required="true"
+                            change="onChange"
+                            value="{path: 'name', type: 'sap.ui.model.type.String'}" />
+                        
+
+                        <!-- CALLE -->
+                        <Label text="Street" />
+                        <Input
+                            placeholder="Educadores"
+                            value="{street/name}">
+                            <layoutData>
+                                <form:ColumnElementData
+                                    cellsSmall="6"
+                                    cellsLarge="6" />
+                            </layoutData>
+                        </Input>
+
+                        <!-- NÚMERO -->
+                        <Input
+                            placeholder="1970"
+                            value="{street/number}">
+                            <layoutData>
+                                <form:ColumnElementData
+                                    cellsSmall="2"
+                                    cellsLarge="2" />
+                            </layoutData>
+                        </Input>
+
+
+                        <!-- ZIP -->
+                        <Label text="ZIP Code" />
+                        <Input value="{path: 'zip/code', type: 'sap.ui.model.type.Integer'}">
+                            <layoutData>
+                                <form:ColumnElementData
+                                    cellsSmall="3"
+                                    cellsLarge="2" />
+                            </layoutData>
+                        </Input>
+
+                        <!-- CONTACTO -->
+
+                        <!--EMAIL-->
+                        <core:Title text="Contact" />
+                        <Label text="Email" />
+                        <Input placeholder="correo@ejemplo.com" value="{path: 'email', type: 'sap.ui.model.type.String'}"></Input>
+
+                        <!--NUMERO-->
+                        <Label text="Phone" />
+                        <Input
+                            placeholder="54"
+                            value="{phone/number}">
+                            <layoutData>
+                                <form:ColumnElementData
+                                    cellsSmall="2"
+                                    cellsLarge="2" />
+                            </layoutData>
+                            
+                        </Input>
+
+                        <Input
+                            placeholder="2616728328"
+                            value="{phone/time}">
+                            
+                        </Input>
+
+                        <Label text="Peronal Website"></Label>
+                        <Input value="{website}"></Input>
+
+
+
+                    </form:content>
+                </form:SimpleForm>
+            </VBox>
+
+            <!-- ========================= -->
+            <!-- FORMULARIO: DATOS LABORALES -->
+            <!-- ========================= -->
+            <VBox class="sapUiSmallMargin">
+
+                <form:SimpleForm
+                    id="simpleFormEmployment"
+                    editable="true"
+                    layout="ColumnLayout"
+                    columnsM="1"
+                    columnsL="2"
+                    columnsXL="2">
+
+                    <form:content>
+
+                        <core:Title text="Position" />
+
+                        <Label text="Role" />
+                        <Input placeholder="Ej: Desarrollador" />
+
+                        <Label text="Department" />
+                        <Input placeholder="Ej: IT" />
+
+                        <core:Title text="Rating" />
+
+                        <Label text="Score" />
+                        <Input placeholder="1 - 5" />
+
+                        <Label text="Experience (years)" />
+                        <Input placeholder="Ej: 3" />
+
+                    </form:content>
+                </form:SimpleForm>
+            </VBox>
+
+        </Page>
+    </App>
 </mvc:View>

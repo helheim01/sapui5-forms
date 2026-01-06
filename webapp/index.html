@@ -1,35 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Formulario MVC</title>
-    <style>
-        html, body, body > div, #container, #container-uiarea {
-            height: 100%;
-        }
-    </style>
+    <title>Formulario</title>
+    
     <script
         id="sap-ui-bootstrap"
-        src="resources/sap-ui-core.js"
+        src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
         data-sap-ui-theme="sap_horizon"
-        data-sap-ui-resource-roots='{
+        data-sap-ui-libs="sap.m,sap.ui.layout"
+        data-sap-ui-resourceroots='{
             "com.devjero.forms.forms": "./"
         }'
-        data-sap-ui-on-init="module:sap/ui/core/ComponentSupport"
-        data-sap-ui-compat-version="edge"
-        data-sap-ui-async="true"
-        data-sap-ui-frame-options="trusted"
-    ></script>
+        data-sap-ui-async="true">
+    </script>
+    
+    <script>
+        sap.ui.require([
+            "sap/ui/core/mvc/XMLView"
+        ], function(XMLView) {
+            XMLView.create({
+                viewName: "com.devjero.forms.forms.view.App"
+            }).then(function(oView) {
+                oView.placeAt("content");
+            });
+        });
+    </script>
 </head>
-<body class="sapUiBody sapUiSizeCompact" id="content">
-    <div
-        data-sap-ui-component
-        data-name="com.devjero.forms.forms"
-        data-id="container"
-        data-settings='{"id" : "com.devjero.forms.forms"}'
-        data-handle-validation="true"
-    ></div>
+<body class="sapUiBody" id="content">
 </body>
 </html>

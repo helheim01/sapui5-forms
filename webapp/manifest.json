@@ -38,8 +38,10 @@
       "minUI5Version": "1.143.2",
       "libs": {
         "sap.m": {},
-        "sap.ui.core": {}
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
       }
+
     },
     "contentDensities": {
       "compact": true,
@@ -59,40 +61,6 @@
           "uri": "css/style.css"
         }
       ]
-    },
-    "routing": {
-      "config": {
-        "routerClass": "sap.m.routing.Router",
-        "controlAggregation": "pages",
-        "controlId": "app",
-        "transition": "slide",
-        "type": "View",
-        "viewType": "XML",
-        "path": "com.devjero.forms.forms.view",
-        "async": true,
-        "viewPath": "com.devjero.forms.forms.view"
-      },
-      "routes": [
-        {
-          "name": "RouteApp",
-          "pattern": ":?query:",
-          "target": [
-            "TargetApp"
-          ]
-        }
-      ],
-      "targets": {
-        "TargetApp": {
-          "id": "App",
-          "name": "App"
-        }
-      }
-    },
-    "rootView": {
-      "viewName": "com.devjero.forms.forms.view.App",
-      "type": "XML",
-      "id": "App",
-      "async": true
     }
   }
 }
