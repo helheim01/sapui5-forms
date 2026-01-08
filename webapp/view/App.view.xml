@@ -6,14 +6,11 @@
     xmlns:form="sap.ui.layout.form"
     displayBlock="true">
 
-    <!-- ========================= -->
-    <!-- APLICACIÓN PRINCIPAL -->
-    <!-- ========================= -->
     <App id="app">
         <Page id="pageMain" title="Formulario MVC">
 
             <!-- ========================= -->
-            <!-- FORMULARIO: DATOS PERSONALES -->
+            <!-- DATOS PERSONALES -->
             <!-- ========================= -->
             <VBox id="vbPersonal" class="sapUiSmallMargin">
 
@@ -27,110 +24,59 @@
 
                     <form:content>
 
-                        <!-- INFORMACIÓN PERSONAL -->
-                        <core:Title id="ttlPersonalInfo" text="Information" />
+                        <core:Title text="Information" />
 
-                        <!-- NAME -->
-                        <Label id="lblName" text="Name" />
-                        <Input
-                            id="inpName"
-                            placeholder="Juan"
-                            required="true"
-                            change="onChange"
-                            value="{path: 'name', type: 'sap.ui.model.type.String'}" />
+                        <Label text="Name" />
+                        <Input value="{/forms/0/name}" />
 
-                        <!-- STREET + NUMBER -->
-                        <Label id="lblStreetNumber" text="Street / Number" />
-
-                        <Input
-                            id="inpStreet"
-                            placeholder="Educadores"
-                            value="{street/name}">
+                        <Label text="Street / Number" />
+                        <Input value="{/forms/0/street/name}">
                             <layoutData>
-                                <form:ColumnElementData id="largeStreet" cellsLarge="7" />
+                                <form:ColumnElementData cellsLarge="5" />
                             </layoutData>
                         </Input>
 
-                        <Input
-                            id="inpStreetNumber"
-                            placeholder="1970"
-                            value="{street/number}">
+                        <Input value="{/forms/0/street/number}">
                             <layoutData>
-                                <form:ColumnElementData id="largeStreetNumber" cellsLarge="3" />
+                                <form:ColumnElementData cellsLarge="3" />
                             </layoutData>
                         </Input>
 
-                        <!-- ZIP / CITY -->
-                        <Label id="lblZipCity" text="ZIP Code / City" />
-                        <Input
-                            id="inpZip"
-                            value="{path: 'zip/code', type: 'sap.ui.model.type.Integer'}">
+                        <Label text="ZIP / City" />
+                        <Input value="{/forms/0/zip/code}">
                             <layoutData>
-                                <form:ColumnElementData id="largeZip" cellsLarge="3" />
+                                <form:ColumnElementData cellsLarge="3" />
                             </layoutData>
                         </Input>
 
-                        <Input
-                            id="inpCity"
-                            value="{zip/city}" />
+                        <Input value="{/forms/0/zip/city}" />
 
-                        <!-- COUNTRY -->
-                        <Label id="lblCountry" text="Country" />
-                        <Select
-                            id="selCountry"
-                            selectedKey="{country}">
+                        <Label text="Country" />
+                        <Select selectedKey="{/forms/0/country}">
                             <items>
-                                <core:Item id="countryEN" text="England" key="EN" />
-                                <core:Item id="countryDE" text="Germany" key="DE" />
-                                <core:Item id="countryUS" text="USA" key="US" />
+                                <core:Item text="England" key="EN" />
+                                <core:Item text="Germany" key="DE" />
+                                <core:Item text="USA" key="US" />
                             </items>
                         </Select>
 
-                        <!-- CONTACT -->
-                        <core:Title id="ttlContact" text="Contact" />
+                        <core:Title text="Contact" />
 
-                        <!-- EMAIL -->
-                        <Label id="lblEmail" text="Email" />
-                        <Input
-                            id="inpEmail"
-                            placeholder="correo@ejemplo.com"
-                            value="{path: 'email', type: 'sap.ui.model.type.String', constraints:{
-                                search: '^\\w+[\\-+]*\\@[a-zA-Z]+.[a-zA-Z]+'
-                            }}" />
+                        <Label text="Email" />
+                        <Input value="{/forms/0/email}" />
 
-                        <!-- PHONE -->
-                        <Label id="lblPhone" text="Phone" />
+                        <Label text="Phone" />
+                        <Input value="{/forms/0/phone/number}" />
 
-                        <Input
-                            id="inpPhoneCode"
-                            placeholder="+54"
-                            value="{phone/code}">
-                            <layoutData>
-                                <form:ColumnElementData id="largePhoneCode" cellsLarge="2" />
-                            </layoutData>
-                        </Input>
-
-                        <Input
-                            id="inpPhoneNumber"
-                            placeholder="2616728328"
-                            value="{phone/number}">
-                            <layoutData>
-                                <form:ColumnElementData id="largePhoneNumber" cellsLarge="4" />
-                            </layoutData>
-                        </Input>
-
-                        <!-- WEBSITE -->
-                        <Label id="lblWebsite" text="Personal Website" />
-                        <Input
-                            id="inpWebsite"
-                            value="{website}" />
+                        <Label text="Website" />
+                        <Input value="{/forms/0/website}" />
 
                     </form:content>
                 </form:SimpleForm>
             </VBox>
 
             <!-- ========================= -->
-            <!-- FORMULARIO: DATOS LABORALES -->
+            <!-- DATOS LABORALES -->
             <!-- ========================= -->
             <VBox id="vbEmployment" class="sapUiSmallMargin">
 
@@ -144,38 +90,27 @@
 
                     <form:content>
 
-                        <!-- POSITION -->
-                        <core:Title id="ttlPosition" text="Position" />
+                        <core:Title text="Position" />
 
-                        <Label id="lblJobTitle" text="Job Classification" />
-                        <Input id="inpJobTitle" value="{jobtitle}" />
+                        <Label text="Job Title" />
+                        <Input value="{/employment/0/jobTitle}" />
 
-                        <Label id="lblPayGrade" text="Pay Grade" />
-                        <Input id="inpPayGrade" value="{payGrade}" />
+                        <Label text="Pay Grade" />
+                        <Input value="{/employment/0/payGrade}" />
 
-                        <Label id="lblUnit" text="Unit" />
-                        <Input id="inpUnit" value="{unit}" />
+                        <Label text="Unit" />
+                        <Input value="{/employment/0/unit}" />
 
-                        <!-- RATING -->
-                        <core:Title id="ttlRating" text="Rating" />
+                        <core:Title text="Rating" />
 
-                        <Label id="lblEmployeeClass" text="Employee Class" />
-                        <Input
-                            id="inpEmployeeClass"
-                            value="{class}" />
+                        <Label text="Employee Class" />
+                        <Input value="{/employment/0/class}" />
 
-                        <Label id="lblFTE" text="FTE (Full Time Equivalent)" />
-                        <Input
-                            id="inpFTE"
-                            value="{fte}" />
+                        <Label text="FTE" />
+                        <Input value="{/employment/0/fte}" />
 
-                        <Label id="lblWeeklyHours" text="Standard Weekly Hours" />
-                        <Input
-                            id="inpWeeklyHours"
-                            change="onChange"
-                            value="{path: 'weeklyHours', type: 'sap.ui.model.type.Integer', constraints:  {
-                                maximum: 40
-                            }}" />
+                        <Label text="Weekly Hours" />
+                        <Input value="{/employment/0/weeklyHours}" />
 
                     </form:content>
                 </form:SimpleForm>
@@ -183,9 +118,14 @@
 
             <footer>
                 <OverflowToolbar id="footer">
-                    <Button id="mesasagePopover" text="Messages" press=".handleMessagePopover"></Button>
+                    <Button 
+                        id="messagePopover" 
+                        text="Messages" 
+                        press=".handleMessagePopover"
+                        icon="{ path : '/', formatter : '.mpIconFormatter'}"    
+                    ></Button>
                     <!--Mover estos 2 a la derecha-->
-                    <ToolbarSpacer id="rigthButtons" ></ToolbarSpacer>
+                    <ToolbarSpacer id="rigthButtons"></ToolbarSpacer>
                     <Button id="saveButton" text="Save" press="saveData" type="Emphasized"></Button>
                     <Button id="cancelButton" text="Cancel"></Button>
                 </OverflowToolbar>
