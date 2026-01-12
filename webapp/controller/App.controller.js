@@ -15,6 +15,8 @@ sap.ui.define([
     "sap/m/MessagePopover",
     "sap/m/MessageItem",
     "sap/ui/core/Element"
+
+    //Los parametros de la funcion deben estar en el mismo orden en que los definí antes
 ], function (
     Controller,
     JSONModel,
@@ -43,11 +45,13 @@ sap.ui.define([
             // Se cargan los datos desde el JSON local
             oModel.loadData("./localService/mockdata/CustomerModel.json");
 
-            // Se inistancia y se obtiene la vista asociada al controlador
+            // Se inistancia y se obtiene la vista asociada al controlador (la vista que creó al controlador)
             this.oView = this.getView();
 
-            // Se asigna el modelo a la vista (la vista ahora conoce al modelo, y puede traer datos de el usando biding en el XML)
+            // Se asigna el modelo a la vista (la vista ahora conoce al modelo, y puede traer datos de el usando biding en el XML: value="{/forms/0/name}")
             this.oView.setModel(oModel);
+
+
 
             // =========================
             // MESSAGE MANAGER
@@ -68,12 +72,13 @@ sap.ui.define([
             );
 
             // Se asigna el modelo de mensajes a la vista
+            // Es como decirle "Vista, acá te dejo el modelo (MessageManager) donde UI5 guarda todos los errores y mensajes, renombrado a "message" ”
             this.oView.setModel(
                 this._MessageManager.getMessageModel(),
                 "message"
             );
 
-            // Se crea el MessagePopover (todavía sin mostrarlo)
+            // Se crea el MessagePopover: Componente visual donde se van a mostrar los mensajes (todavía sin mostrarlo)
             this.createMessagePopover();
 
             //La app arranca → se crea la vista → se inicializa el controller → se carga el JSON → 
@@ -81,35 +86,41 @@ sap.ui.define([
             // la vista queda lista para mostrar datos y validar errores
         },
 
-        /**
-         * Crea el MessagePopover que mostrará errores y advertencias
-         */
+
+
+
+
+        /*
+        Crea el MessagePopover que mostrará errores y advertencias
+        Método que crea una ventana flotante (MessagePopover) que:
+            1. Lee los mensajes del sistema (MessageManager)
+            2. Los muestra en una lista
+            3. Cuando se hace click en uno, te lleve al campo con error
+        */
         createMessagePopover: function () {
 
-            // Guardamos referencia al controller
+            // Guardo el controller para poder usarlo dentro de callbacks
             const oController = this;
 
-            // Se instancia el MessagePopover
+            // Se instancia el MessagePopover y se guarda en el controller (this.oMP)
             this.oMP = new MessagePopover({
 
-                /**
-                 * Evento que se dispara al hacer click en un mensaje
-                 * (cuando el título es interactivo)
-                 */
+
+            //Evento que se dispara al hacer click en un mensaje de error:
                 activeTitlePress: function (oEvent) {
 
-                    // Se obtiene el item presionado
+                    // Se obtiene el item presionado (oItem = una fila del MessagePopover)
                     const oItem = oEvent.getParameter("item");
 
-                    // Página principal (para poder scrollear)
+                    // Página principal para poder scrollear
                     const oPage = oController.getView().byId("pageMain");
 
-                    // Se obtiene el mensaje desde el modelo "message"
+                    // Se obtiene el mensaje desde el modelo "message" (Con el controlId recuperamos el Input exacto que falló.)
                     const oMessage = oItem
                         .getBindingContext("message")
                         .getObject();
 
-                    // Se obtiene el control asociado al mensaje
+                    // Se obtiene el control asociado al mensaje (Con el controlId recuperamos el Input exacto que falló)
                     const oControl = Element.registry.get(
                         oMessage.getControlId()
                     );
@@ -122,22 +133,22 @@ sap.ui.define([
                             [0, -100]
                         );
 
-                        // Se enfoca el campo luego del scroll
+                        // Se enfoca el campo del control luego del scroll
                         setTimeout(function () {
                             oControl.focus();
                         }, 300);
                     }
                 },
 
-                // Binding de los mensajes al modelo "message"
+                //De acá salen los mensajes (del modelo de mensajes: MessageManager)
                 items: {
                     path: "message>/",
-                    template: new MessageItem({
+                    template: new MessageItem({ //Define cómo se muestra cada mensaje
                         title: "{message>message}",
                         subtitle: "{message>additionalText}",
                         groupName : {parts : [{path : 'message>controlIds'}], formatter : this.getGroupName},
                         activeTitle : {parts : [{path : 'message>controlIds'}], formatter : this.isPositionable},
-                        type: { //Convierto Sting a Enum
+                        type: { //Convierto Sting a Enum (porque el modelo trae "Error" como String, y UI5 espera un enum)
                             path: "message>type",
                             formatter: function (sType) {
                                 return sap.ui.core.message.MessageType[sType] || sap.ui.core.message.MessageType.None;
@@ -147,7 +158,7 @@ sap.ui.define([
                         description : "{message>message}"
                     })
                 },
-
+                //agrupa los mensajes
                 groupItems : true
             });
 
@@ -157,11 +168,16 @@ sap.ui.define([
                 .addDependent(this.oMP);
         },
 
-        //El groupName se genera segun el layout donde estemos.
+
+
+
+
+        //Uso esta funcion para agrupar mensajes en el MessagePopover
         getGroupName : function(sControlId) {
             let oControl=Element.registry.get(sControlId);
 
             if(oControl){
+                const sId = Array.isArray(sControlId) ? sControlId[0] : sControlId;
                 let sFormSubtitle = oControl.getParent().getTitle().getText(); //Me da el subtitulo del campo donde hay error
                 let sFormTitle = oControl.getParent().getParent().getParent().getTitle(); //Me da el titulo del campo que da error
                 return sFormTitle + ", " + sFormSubtitle;
@@ -170,14 +186,15 @@ sap.ui.define([
         },
 
         //Puede aplicarse para navegar al controller si se encuentra en la aplicacion
-        //Si lo encuentra, el valor de activeTitle se cambia a true, y ejecuta la funcion activeTitlePress. 
-        isPositionable : function(){
-            return sControlId ? true : false;
+        // //Si lo encuentra, el valor de activeTitle se cambia a true, y ejecuta la funcion activeTitlePress. 
+        isPositionable : function(aControlIds){
+            return Array.isArray(aControlIds) && aControlIds.length > 0; //Si el mensaje está asociado a un control, el título es clickeable
         },
+
 
         mpIconFormatter: function(){
             let sIcon;
-            let aMessage=this._MessageManager.getMessageModel().oData;
+            let aMessage=this._MessageManager.getMessageModel().oData; //Accedo a todos los mensajes
 
             //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta, me pasa cada uno en los parametros
             aMessage.forEach(function(sMessage){ 

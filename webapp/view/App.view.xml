@@ -24,52 +24,52 @@
 
                     <form:content>
 
-                        <core:Title text="Information" />
+                        <core:Title id="_IDGenTitle" text="Information" />
 
-                        <Label text="Name" />
-                        <Input value="{/forms/0/name}" />
+                        <Label id="_IDGenLabel" text="Name" />
+                        <Input id="_IDGenInput1" value="{/forms/0/name}" />
 
-                        <Label text="Street / Number" />
-                        <Input value="{/forms/0/street/name}">
+                        <Label id="_IDGenLabel1" text="Street / Number" />
+                        <Input id="_IDGenInput2" value="{/forms/0/street/name}">
                             <layoutData>
-                                <form:ColumnElementData cellsLarge="5" />
+                                <form:ColumnElementData id="_IDGenColumnElementData" cellsLarge="5" />
                             </layoutData>
                         </Input>
 
-                        <Input value="{/forms/0/street/number}">
+                        <Input id="_IDGenInput3" value="{/forms/0/street/number}">
                             <layoutData>
-                                <form:ColumnElementData cellsLarge="3" />
+                                <form:ColumnElementData id="_IDGenColumnElementData1" cellsLarge="3" />
                             </layoutData>
                         </Input>
 
-                        <Label text="ZIP / City" />
-                        <Input value="{/forms/0/zip/code}">
+                        <Label id="_IDGenLabel2" text="ZIP / City" />
+                        <Input id="_IDGenInput4" value="{/forms/0/zip/code}">
                             <layoutData>
-                                <form:ColumnElementData cellsLarge="3" />
+                                <form:ColumnElementData id="_IDGenColumnElementData2" cellsLarge="3" />
                             </layoutData>
                         </Input>
 
-                        <Input value="{/forms/0/zip/city}" />
+                        <Input id="_IDGenInput5" value="{/forms/0/zip/city}" />
 
-                        <Label text="Country" />
-                        <Select selectedKey="{/forms/0/country}">
+                        <Label id="_IDGenLabel3" text="Country" />
+                        <Select id="_IDGenSelect" selectedKey="{/forms/0/country}">
                             <items>
-                                <core:Item text="England" key="EN" />
-                                <core:Item text="Germany" key="DE" />
-                                <core:Item text="USA" key="US" />
+                                <core:Item id="_IDGenItem" text="England" key="EN" />
+                                <core:Item id="_IDGenItem1" text="Germany" key="DE" />
+                                <core:Item id="_IDGenItem2" text="USA" key="US" />
                             </items>
                         </Select>
 
-                        <core:Title text="Contact" />
+                        <core:Title id="_IDGenTitle1" text="Contact" />
 
-                        <Label text="Email" />
-                        <Input value="{/forms/0/email}" />
+                        <Label id="_IDGenLabel4" text="Email" />
+                        <Input id="_IDGenInput6" value="{/forms/0/email}" />
 
-                        <Label text="Phone" />
-                        <Input value="{/forms/0/phone/number}" />
+                        <Label id="_IDGenLabel5" text="Phone" />
+                        <Input id="_IDGenInput7" value="{/forms/0/phone/number}" />
 
-                        <Label text="Website" />
-                        <Input value="{/forms/0/website}" />
+                        <Label id="_IDGenLabel6" text="Website" />
+                        <Input id="_IDGenInput8" value="{/forms/0/website}" />
 
                     </form:content>
                 </form:SimpleForm>
@@ -90,27 +90,27 @@
 
                     <form:content>
 
-                        <core:Title text="Position" />
+                        <core:Title id="_IDGenTitle2" text="Position" />
 
-                        <Label text="Job Title" />
-                        <Input value="{/employment/0/jobTitle}" />
+                        <Label id="_IDGenLabel7" text="Job Title" />
+                        <Input id="_IDGenInput9" value="{/employment/0/jobTitle}" />
 
-                        <Label text="Pay Grade" />
-                        <Input value="{/employment/0/payGrade}" />
+                        <Label id="_IDGenLabel8" text="Pay Grade" />
+                        <Input id="_IDGenInput10" value="{/employment/0/payGrade}" />
 
-                        <Label text="Unit" />
-                        <Input value="{/employment/0/unit}" />
+                        <Label id="_IDGenLabel9" text="Unit" />
+                        <Input id="_IDGenInput11" value="{/employment/0/unit}" />
 
-                        <core:Title text="Rating" />
+                        <core:Title id="_IDGenTitle3" text="Rating" />
 
-                        <Label text="Employee Class" />
-                        <Input value="{/employment/0/class}" />
+                        <Label id="_IDGenLabel10" text="Employee Class" />
+                        <Input id="_IDGenInput12" value="{/employment/0/class}" />
 
-                        <Label text="FTE" />
-                        <Input value="{/employment/0/fte}" />
+                        <Label id="_IDGenLabel11" text="FTE" />
+                        <Input id="_IDGenInput13" value="{/employment/0/fte}" />
 
-                        <Label text="Weekly Hours" />
-                        <Input value="{/employment/0/weeklyHours}" />
+                        <Label id="_IDGenLabel12" text="Weekly Hours" />
+                        <Input id="_IDGenInput14" value="{/employment/0/weeklyHours}" />
 
                     </form:content>
                 </form:SimpleForm>
