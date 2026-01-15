@@ -14,7 +14,12 @@ sap.ui.define([
     // Componentes para manejar mensajes
     "sap/m/MessagePopover",
     "sap/m/MessageItem",
-    "sap/ui/core/Element"
+    "sap/ui/core/Element",
+
+    //Librerías para campos obligatorios
+    "sap/ui/core/librery",
+    "sap/ui/core/message/Message"
+
 
     //Los parametros de la funcion deben estar en el mismo orden en que los definí antes
 ], function (
@@ -23,9 +28,14 @@ sap.ui.define([
     Core,
     MessagePopover,
     MessageItem,
-    Element
+    Element,
+    librery,
+    message
 ) {
     "use strict";
+
+    //Declaro una variable global que voy a usar para la parte de campos obligatorios (linea 330)
+    var MeesageType=librery.MessageType;
 
     return Controller.extend("com.devjero.forms.forms.controller.App", {
 
@@ -192,15 +202,139 @@ sap.ui.define([
         },
 
 
+
+        //LOGICA BOTON MESSAGE ------------------------------------------------------------
+
+        //Icono del boton segun el caso (Error -> Warning -> Success -> Information)
         mpIconFormatter: function(){
             let sIcon;
             let aMessage=this._MessageManager.getMessageModel().oData; //Accedo a todos los mensajes
 
-            //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta, me pasa cada uno en los parametros
+            //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta para dar el icono correcto segun el mensaje:
+            //Lista de severidad (Mayor a menor): Error -> Warning -> Success -> Information
             aMessage.forEach(function(sMessage){ 
+                switch(sMessage.type){
+                    case "Error":
+                        sIcon="sap-icon://message-error";
+                        break;
 
+                    case "Warning":
+                        sIcon=sIcon !== "sap-icon://message-error"?  "sap-icon://message-warning" : sIcon
+                        break;
+
+                    case "Success ":
+                        sIcon=sIcon !== "sap-icon://message-error" && sIcon !=="sap-icon://message-warning" ? sIcon=sIcon !== "sap-icon://message-success" : sIcon;
+                        break;
+
+                    default:
+                        sIcon= !sIcon? "sap-icon://message-information" : sIcon;
+                        break;
+
+                }
             }); 
-            return "sap-icon://message-error"       
+            return sIcon;   
+        },
+
+        //Tipo de boton de acuerdo a la funcion anterior
+        mpTypeFormatter: function(){
+            let sHighSeverity;
+            let aMessage=this._MessageManager.getMessageModel().oData; //Accedo a todos los mensajes
+
+            //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta para dar el icono correcto segun el mensaje:
+            //Lista de prioridades (Mayor a menor): Error -> Warning -> Success -> Information
+            aMessage.forEach(function(sMessage){ 
+                switch(sMessage.type){
+                    case "Error":
+                        sHighSeverity="Negative";
+                        break;
+
+                    case "Warning":
+                        sHighSeverity=sHighSeverity !== "Negative"?  "Critical" : sHighSeverity
+                        break;
+
+                    case "Success ":
+                        sHighSeverity=sHighSeverity !== "Negative" && sHighSeverity !=="Critical" ? sHighSeverity=sHighSeverity !== "Success" : sHighSeverity;
+                        break;
+
+                    default:
+                        sHighSeverity= !sHighSeverity? "Neutral" : sHighSeverity;
+                        break;
+
+                }
+            }); 
+            return sIcon;   
+        },
+
+        //Muestra el numero de cantidad de errores o warnings en el boton junto al texto
+        mpSeverityMessages: function(){
+            let sHighSeverityIconType=this.mpTypeFormatter
+            let sHighSeverityMessageType;
+
+            switch(sHighSeverityIconType){
+                case "Negative":
+                    sHighSeverityMessageType="Error"
+                    break;
+
+                case "Critical":
+                    sHighSeverityMessageType="Warning"
+                    break;
+
+                case "Success ":
+                    sHighSeverityMessageType="Success"
+                    break;
+
+                default:
+                    sHighSeverityMessageType = !sHighSeverityMessageType ? "Information" : sHighSeverityMessageType;
+                    break;
+            }
+
+            //this._MessageManager.getMessageModel().oData.reduce(function(iNumerOfMessage, oMessageItem){
+            //    return oMessageItem.type===sHighSeverityIconType? ++ iNumerOfMessage  : iNumerOfMessage;
+            //})
+
+            return this._MessageManager.getMessageModel().oData.reduce( //Array de mensajes donde cada mensaje tiene type: "Error" | "Warning" | "Success" | "Information"
+                function(iNumerOfMessage, oMessageItem){ //iNumerOfMessage es el acumulador (contador que arranca en 0) y oMessageItem es el mensaje actual (cada objeto del array)
+                    return oMessageItem.type === sHighSeverityIconType //¿El tipo de este mensaje es igual al tipo más grave detectado?
+                        ? ++iNumerOfMessage //Si el mensaje es del tipo buscado → sumo 1
+                        : iNumerOfMessage; //Si no → dejo el contador igual
+                },
+                 0 //Valor inicial del contador
+                )  || ""; //Si el resultado final es 0, y no cambia, no muestra ningun numero en el boton
+            
+        },
+
+        //Objeto del Evento (cuando se pulsa el boton)
+        //Me aseguro que la instancia del Messagge Popover esté creada antes de hacer el toggle
+        //Cuando se pulsa, muestra en detalle con toggle
+        handleMessagePopover: function(oEvent){
+            if(!this.oMP){
+                this.oMP.createMessagePopover();
+            }
+            this.oMP.toggle(oEvent.getSource());
+
+        },
+
+
+
+        //Campos Obligatorios -------------------------------------------------------------------------------------------
+
+        //el oInput no solo es el contenido, sino todas las propiedades del objeto
+        handleRequiredField: function(oInput){
+            var sTarget=oInput.getBindingContext().getPath() + "/" + oInput.getBindingPath("value");
+
+            //Logica para eliminar mensajes cuando se vuelve a validar (desde el target)
+            if(!oInput.getValue){
+                this._MessageManager.addMessages(
+                    new MessageItem({
+                        message: "A mandatory field required",
+                        type : MeesageType.Error,
+                        additionalText: oInput.getLabels()[0].getText(), //Le indico que tiene el error en el nombre
+                        target: sTarget,
+                        processor: this.getView().getModel()
+                    })
+                )
+            }
+
         }
     });
 });

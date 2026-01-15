@@ -120,10 +120,12 @@
                 <OverflowToolbar id="footer">
                     <Button 
                         id="messagePopover" 
-                        text="Messages" 
                         press=".handleMessagePopover"
                         icon="{ path : '/', formatter : '.mpIconFormatter'}"    
+                        type="{ path : '/', formatter : '.mpTypeFormatter'}" 
+                        text="{ path : '/', formatter : '.mpSeverityMessages'}" 
                     ></Button>
+                    
                     <!--Mover estos 2 a la derecha-->
                     <ToolbarSpacer id="rigthButtons"></ToolbarSpacer>
                     <Button id="saveButton" text="Save" press="saveData" type="Emphasized"></Button>
