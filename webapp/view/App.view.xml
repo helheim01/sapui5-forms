@@ -27,7 +27,7 @@
                         <core:Title id="_IDGenTitle" text="Information" />
 
                         <Label id="_IDGenLabel" text="Name" />
-                        <Input id="_IDGenInput1" value="{/forms/0/name}" />
+                        <Input id="_IDGenInput1" value="{/forms/0/name}" required="true" change="onChange" />
 
                         <Label id="_IDGenLabel1" text="Street / Number" />
                         <Input id="_IDGenInput2" value="{/forms/0/street/name}">
@@ -63,7 +63,7 @@
                         <core:Title id="_IDGenTitle1" text="Contact" />
 
                         <Label id="_IDGenLabel4" text="Email" />
-                        <Input id="_IDGenInput6" value="{/forms/0/email}" />
+                        <Input id="_IDGenInput6" value="{/forms/0/email}" change="onChange" />
 
                         <Label id="_IDGenLabel5" text="Phone" />
                         <Input id="_IDGenInput7" value="{/forms/0/phone/number}" />
@@ -110,7 +110,7 @@
                         <Input id="_IDGenInput13" value="{/employment/0/fte}" />
 
                         <Label id="_IDGenLabel12" text="Weekly Hours" />
-                        <Input id="_IDGenInput14" value="{/employment/0/weeklyHours}" />
+                        <Input id="_IDGenInput14" value="{/employment/0/weeklyHours}" change="onChange" />
 
                     </form:content>
                 </form:SimpleForm>

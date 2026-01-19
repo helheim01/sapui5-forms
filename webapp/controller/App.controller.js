@@ -1,27 +1,31 @@
 // @ts-nocheck
-// Se desactiva el chequeo de TypeScript porque UI5 usa patrones dinámicos
+// Se desactiva el chequeo de TypeScript porque SAPUI5 usa patrones dinámicos
+// (binding, acceso a propiedades internas, etc.)
 
+// Define un módulo de SAPUI5 y especifica sus dependencias
 sap.ui.define([
-    // Controlador base de UI5
+    // Controller base de SAPUI5
     "sap/ui/core/mvc/Controller",
 
-    // Modelo JSON para cargar datos locales
+    // Modelo JSON para datos locales
     "sap/ui/model/json/JSONModel",
 
-    // Core de UI5 (para acceder al MessageManager)
+    // Core de UI5 (para acceder al MessageManager global)
     "sap/ui/core/Core",
 
-    // Componentes para manejar mensajes
+    // Componentes visuales para mensajes
     "sap/m/MessagePopover",
     "sap/m/MessageItem",
+
+    // Registro global de controles (para localizar Inputs con error)
     "sap/ui/core/Element",
 
-    //Librerías para campos obligatorios
-    "sap/ui/core/librery",
+    // Librería core (MessageType enum)
+    "sap/ui/core/library",
+
+    // Clase Message (mensaje real que gestiona el MessageManager)
     "sap/ui/core/message/Message"
 
-
-    //Los parametros de la funcion deben estar en el mismo orden en que los definí antes
 ], function (
     Controller,
     JSONModel,
@@ -29,19 +33,23 @@ sap.ui.define([
     MessagePopover,
     MessageItem,
     Element,
-    librery,
-    message
+    library,
+    Message
 ) {
     "use strict";
 
-    //Declaro una variable global que voy a usar para la parte de campos obligatorios (linea 330)
-    var MeesageType=librery.MessageType;
+    // Enum de tipos de mensaje (Error, Warning, Success, Information)
+    const MessageType = library.MessageType;
 
+    // Extiende el Controller base y crea el controller de la aplicación
     return Controller.extend("com.devjero.forms.forms.controller.App", {
 
         /**
+         * =====================================================
+         * onInit
          * Método de ciclo de vida
-         * Se ejecuta cuando la vista se crea
+         * Se ejecuta cuando la vista es creada
+         * =====================================================
          */
         onInit: function () {
 
@@ -49,292 +57,509 @@ sap.ui.define([
             // MODELO DE DATOS
             // =========================
 
-            // Se crea el modelo JSON vacio
+            // Se crea una instancia de JSONModel vacía
             const oModel = new JSONModel();
 
-            // Se cargan los datos desde el JSON local
+            // Carga los datos desde el archivo JSON local de forma asíncrona
             oModel.loadData("./localService/mockdata/CustomerModel.json");
 
-            // Se inistancia y se obtiene la vista asociada al controlador (la vista que creó al controlador)
+            // Obtiene la referencia a la vista asociada a este controller
             this.oView = this.getView();
 
-            // Se asigna el modelo a la vista (la vista ahora conoce al modelo, y puede traer datos de el usando biding en el XML: value="{/forms/0/name}")
+            // Asigna el modelo JSON como modelo principal (sin nombre) de la vista
+            // Este es el modelo por defecto (sin nombre)
+            // En el XML se usa así:
+            // <Input value="{/forms/0/name}" />
             this.oView.setModel(oModel);
-
-
 
             // =========================
             // MESSAGE MANAGER
             // =========================
 
-            // Se obtiene el MessageManager global de UI5 para centralizar errores, warning, validaciones, etc.
+            // Obtiene la instancia singleton del MessageManager de SAPUI5
+            // Centraliza errores, warnings, validaciones, etc.
             this._MessageManager = Core.getMessageManager();
 
-            // Se eliminan mensajes anteriores (por seguridad)
+            // Elimina todos los mensajes existentes (limpia el estado previo)
             this._MessageManager.removeAllMessages();
 
-            // Se registra el contenedor del formulario de la vista en el MessageManager
-            // Esto permite que UI5 detecte errores en ese contenedor
-            //Con true registra los hijos (Inputs, Selects, etc.)
+            // Registra el control "vbPersonal" para que el MessageManager observe
+            // este control y todos sus hijos (segundo parámetro = true)
+            // para detectar errores automáticamente
             this._MessageManager.registerObject(
                 this.oView.byId("vbPersonal"),
                 true
             );
 
-            // Se asigna el modelo de mensajes a la vista
-            // Es como decirle "Vista, acá te dejo el modelo (MessageManager) donde UI5 guarda todos los errores y mensajes, renombrado a "message" ”
+            // Obtiene el modelo de mensajes del MessageManager y lo asigna a la vista
+            // Se le asigna el nombre "message" para no sobrescribir el modelo principal
+            // Una vista puede tener múltiples modelos con diferentes nombres
             this.oView.setModel(
                 this._MessageManager.getMessageModel(),
                 "message"
             );
 
-            // Se crea el MessagePopover: Componente visual donde se van a mostrar los mensajes (todavía sin mostrarlo)
+            // Llama al método que crea el MessagePopover (ventana emergente de mensajes)
             this.createMessagePopover();
 
-            //La app arranca → se crea la vista → se inicializa el controller → se carga el JSON → 
-            // se asigna el modelo → se configura el MessageManager → 
-            // la vista queda lista para mostrar datos y validar errores
+            // Flujo completo:
+            // Vista creada → controller inicializado →
+            // JSON cargado → modelo asignado →
+            // MessageManager configurado →
+            // App lista para mostrar datos y validar errores
         },
 
-
-
-
-
-        /*
-        Crea el MessagePopover que mostrará errores y advertencias
-        Método que crea una ventana flotante (MessagePopover) que:
-            1. Lee los mensajes del sistema (MessageManager)
-            2. Los muestra en una lista
-            3. Cuando se hace click en uno, te lleve al campo con error
-        */
+        /**
+         * =====================================================
+         * createMessagePopover
+         * Crea el MessagePopover que muestra errores y warnings
+         * =====================================================
+         */
         createMessagePopover: function () {
 
-            // Guardo el controller para poder usarlo dentro de callbacks
+            // Guarda referencia al controller para usarla dentro de callbacks
             const oController = this;
 
-            // Se instancia el MessagePopover y se guarda en el controller (this.oMP)
+            // Crea una nueva instancia del MessagePopover
             this.oMP = new MessagePopover({
 
-
-            //Evento que se dispara al hacer click en un mensaje de error:
+                // Evento que se ejecuta cuando el usuario hace clic en el título de un mensaje
                 activeTitlePress: function (oEvent) {
 
-                    // Se obtiene el item presionado (oItem = una fila del MessagePopover)
+                    // Obtiene el item (mensaje) que fue presionado
                     const oItem = oEvent.getParameter("item");
 
-                    // Página principal para poder scrollear
+                    // Obtiene la referencia a la página principal para hacer scroll
                     const oPage = oController.getView().byId("pageMain");
 
-                    // Se obtiene el mensaje desde el modelo "message" (Con el controlId recuperamos el Input exacto que falló.)
+                    // Obtiene el objeto Message completo desde el binding context
+                    // del modelo "message"
                     const oMessage = oItem
                         .getBindingContext("message")
                         .getObject();
 
-                    // Se obtiene el control asociado al mensaje (Con el controlId recuperamos el Input exacto que falló)
+                    // Busca el control UI (Input, Select, etc.) asociado al mensaje
+                    // usando su ID en el registro global de elementos
                     const oControl = Element.registry.get(
                         oMessage.getControlId()
                     );
 
-                    // Si existe el control, se hace scroll hasta él
+                    // Si el control existe en el DOM
                     if (oControl) {
+                        // Hace scroll hasta el elemento del control
+                        // 200ms de duración, offset de -100px desde arriba
                         oPage.scrollToElement(
                             oControl.getDomRef(),
                             200,
                             [0, -100]
                         );
 
-                        // Se enfoca el campo del control luego del scroll
+                        // Después de 300ms (cuando termina el scroll), enfoca el campo
                         setTimeout(function () {
                             oControl.focus();
                         }, 300);
                     }
                 },
 
-                //De acá salen los mensajes (del modelo de mensajes: MessageManager)
+                // Configuración del binding para los items del popover
                 items: {
+                    // Path al modelo de mensajes (raíz del modelo "message")
                     path: "message>/",
-                    template: new MessageItem({ //Define cómo se muestra cada mensaje
+                    // Template que define cómo se renderiza cada mensaje
+                    template: new MessageItem({
+
+                        // Texto principal del mensaje (ej: "Campo obligatorio")
                         title: "{message>message}",
+
+                        // Texto secundario (ej: nombre del campo "Email")
                         subtitle: "{message>additionalText}",
-                        groupName : {parts : [{path : 'message>controlIds'}], formatter : this.getGroupName},
-                        activeTitle : {parts : [{path : 'message>controlIds'}], formatter : this.isPositionable},
-                        type: { //Convierto Sting a Enum (porque el modelo trae "Error" como String, y UI5 espera un enum)
+
+                        // Define el nombre del grupo para agrupar mensajes
+                        groupName: {
+                            // Array de propiedades a usar en el formatter
+                            parts: [{ path: "message>controlIds" }],
+                            // Función que devuelve el nombre del grupo
+                            formatter: this.getGroupName
+                        },
+
+                        // Define si el título es clickeable (navega al campo)
+                        activeTitle: {
+                            // Array de propiedades a usar en el formatter
+                            parts: [{ path: "message>controlIds" }],
+                            // Función que determina si es posicionable
+                            formatter: this.isPositionable
+                        },
+
+                        // Convierte el tipo de mensaje de String a Enum MessageType
+                        type: {
+                            // Path a la propiedad type del mensaje
                             path: "message>type",
+                            // Función que convierte "Error" → MessageType.Error
                             formatter: function (sType) {
-                                return sap.ui.core.message.MessageType[sType] || sap.ui.core.message.MessageType.None;
+                                return MessageType[sType] || MessageType.None;
                             }
                         },
 
-                        description : "{message>message}"
+                        // Descripción extendida del mensaje
+                        description: "{message>message}"
                     })
                 },
-                //agrupa los mensajes
-                groupItems : true
+
+                // Activa el agrupamiento visual de mensajes
+                groupItems: true
             });
 
-            // Se agrega el popover como dependiente de la vista
+            // Agrega el MessagePopover como dependiente de la vista
+            // Esto asegura que se destruya automáticamente cuando se destruya la vista
             this.getView()
                 .byId("messagePopover")
                 .addDependent(this.oMP);
         },
 
+        /**
+         * =====================================================
+         * getGroupName
+         * Devuelve el nombre del grupo para el MessagePopover
+         * =====================================================
+         */
+        getGroupName: function (aControlIds) {
+            // Obtiene el primer ID de control (puede ser array o string)
+            const sId = Array.isArray(aControlIds) ? aControlIds[0] : aControlIds;
+            // Busca el control en el registro global
+            const oControl = Element.registry.get(sId);
 
+            // Si encuentra el control
+            if (oControl) {
+                // Obtiene el título del FormContainer (subtítulo, ej: "Datos Personales")
+                const sFormSubtitle = oControl.getParent().getTitle().getText();
+                // Navega hacia arriba en el árbol: Parent → Parent → Parent
+                // para obtener el título del Form principal (ej: "Formulario Cliente")
+                const sFormTitle = oControl
+                    .getParent()
+                    .getParent()
+                    .getParent()
+                    .getTitle();
 
-
-
-        //Uso esta funcion para agrupar mensajes en el MessagePopover
-        getGroupName : function(sControlId) {
-            let oControl=Element.registry.get(sControlId);
-
-            if(oControl){
-                const sId = Array.isArray(sControlId) ? sControlId[0] : sControlId;
-                let sFormSubtitle = oControl.getParent().getTitle().getText(); //Me da el subtitulo del campo donde hay error
-                let sFormTitle = oControl.getParent().getParent().getParent().getTitle(); //Me da el titulo del campo que da error
-                return sFormTitle + ", " + sFormSubtitle;
-
+                // Retorna el nombre compuesto: "Formulario Cliente - Datos Personales"
+                return sFormTitle + " - " + sFormSubtitle;
             }
         },
 
-        //Puede aplicarse para navegar al controller si se encuentra en la aplicacion
-        // //Si lo encuentra, el valor de activeTitle se cambia a true, y ejecuta la funcion activeTitlePress. 
-        isPositionable : function(aControlIds){
-            return Array.isArray(aControlIds) && aControlIds.length > 0; //Si el mensaje está asociado a un control, el título es clickeable
+        /**
+         * =====================================================
+         * isPositionable
+         * Define si el mensaje puede navegar al control
+         * Si lo encuentra, el valor de activeTitle se cambia a true, y ejecuta la función activeTitlePress.
+         * =====================================================
+         */
+        isPositionable: function (aControlIds) {
+            // Retorna true si hay al menos un control asociado al mensaje
+            // Si el mensaje está asociado a un control, el título es clickeable
+            return Array.isArray(aControlIds) && aControlIds.length > 0;
         },
 
 
 
-        //LOGICA BOTON MESSAGE ------------------------------------------------------------
+    //LOGICA BOTON MESSAGE -------------------------------------------------------------------------
 
-        //Icono del boton segun el caso (Error -> Warning -> Success -> Information)
-        mpIconFormatter: function(){
+
+        /**
+         * =====================================================
+         * mpIconFormatter
+         * Devuelve el ícono según la severidad más alta (Error -> Warning -> Success -> Information)
+         * =====================================================
+         */
+        mpIconFormatter: function () {
+            // Variable para almacenar el ícono resultante
             let sIcon;
-            let aMessage=this._MessageManager.getMessageModel().oData; //Accedo a todos los mensajes
+            // Obtiene el array de todos los mensajes del MessageManager
+            const aMessages = this._MessageManager.getMessageModel().oData;
 
-            //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta para dar el icono correcto segun el mensaje:
-            //Lista de severidad (Mayor a menor): Error -> Warning -> Success -> Information
-            aMessage.forEach(function(sMessage){ 
-                switch(sMessage.type){
+            // Itera sobre todos los mensajes para determinar el ícono de mayor severidad
+            // Lista de severidad (Mayor a menor): Error -> Warning -> Success -> Information
+            aMessages.forEach(function (oMessage) {
+                // Switch que evalúa el tipo de cada mensaje
+                switch (oMessage.type) {
                     case "Error":
-                        sIcon="sap-icon://message-error";
+                        // Error tiene máxima prioridad, siempre sobrescribe
+                        sIcon = "sap-icon://message-error";
                         break;
-
                     case "Warning":
-                        sIcon=sIcon !== "sap-icon://message-error"?  "sap-icon://message-warning" : sIcon
+                        // Warning solo se asigna si no hay Error
+                        if (sIcon !== "sap-icon://message-error") {
+                            sIcon = "sap-icon://message-warning";
+                        }
                         break;
-
-                    case "Success ":
-                        sIcon=sIcon !== "sap-icon://message-error" && sIcon !=="sap-icon://message-warning" ? sIcon=sIcon !== "sap-icon://message-success" : sIcon;
+                    case "Success":
+                        // Success solo se asigna si no hay nada asignado
+                        if (!sIcon) {
+                            sIcon = "sap-icon://message-success";
+                        }
                         break;
-
                     default:
-                        sIcon= !sIcon? "sap-icon://message-information" : sIcon;
-                        break;
-
+                        // Information es la menor prioridad
+                        if (!sIcon) {
+                            sIcon = "sap-icon://message-information";
+                        }
                 }
-            }); 
-            return sIcon;   
+            });
+
+            // Retorna el ícono de mayor severidad encontrado
+            return sIcon;
         },
 
-        //Tipo de boton de acuerdo a la funcion anterior
-        mpTypeFormatter: function(){
+        /**
+         * =====================================================
+         * mpTypeFormatter
+         * Devuelve el tipo de botón según severidad
+         * =====================================================
+         */
+        mpTypeFormatter: function () {
+            // Variable para almacenar el tipo de severidad más alta
             let sHighSeverity;
-            let aMessage=this._MessageManager.getMessageModel().oData; //Accedo a todos los mensajes
+            // Obtiene el array de todos los mensajes
+            const aMessages = this._MessageManager.getMessageModel().oData;
 
-            //Esta funcion itera/recorre sobre todo el array de los mensajes y vuelta por vuelta para dar el icono correcto segun el mensaje:
-            //Lista de prioridades (Mayor a menor): Error -> Warning -> Success -> Information
-            aMessage.forEach(function(sMessage){ 
-                switch(sMessage.type){
+            // Itera sobre los mensajes para determinar el tipo de botón
+            aMessages.forEach(function (oMessage) {
+                // Switch que convierte tipo de mensaje a tipo de botón SAPUI5
+                switch (oMessage.type) {
                     case "Error":
-                        sHighSeverity="Negative";
+                        // Error → botón rojo (Negative)
+                        sHighSeverity = "Negative";
                         break;
-
                     case "Warning":
-                        sHighSeverity=sHighSeverity !== "Negative"?  "Critical" : sHighSeverity
+                        // Warning → botón naranja/amarillo (Critical)
+                        // Solo si no hay Error
+                        if (sHighSeverity !== "Negative") {
+                            sHighSeverity = "Critical";
+                        }
                         break;
-
-                    case "Success ":
-                        sHighSeverity=sHighSeverity !== "Negative" && sHighSeverity !=="Critical" ? sHighSeverity=sHighSeverity !== "Success" : sHighSeverity;
+                    case "Success":
+                        // Success → botón verde (Success)
+                        // Solo si no hay severidades mayores
+                        if (!sHighSeverity) {
+                            sHighSeverity = "Success";
+                        }
                         break;
-
                     default:
-                        sHighSeverity= !sHighSeverity? "Neutral" : sHighSeverity;
-                        break;
-
+                        // Information → botón azul/gris (Neutral)
+                        // Menor prioridad
+                        if (!sHighSeverity) {
+                            sHighSeverity = "Neutral";
+                        }
                 }
-            }); 
-            return sIcon;   
+            });
+
+            // Retorna el tipo de severidad más alta
+            return sHighSeverity;
         },
 
-        //Muestra el numero de cantidad de errores o warnings en el boton junto al texto
-        mpSeverityMessages: function(){
-            let sHighSeverityIconType=this.mpTypeFormatter
-            let sHighSeverityMessageType;
+        /**
+         * =====================================================
+         * mpSeverityMessages
+         * Devuelve la cantidad de mensajes de mayor severidad junto al texto
+         * =====================================================
+         */
+        mpSeverityMessages: function () {
+            // Obtiene el tipo de botón (Negative, Critical, Success, Neutral)
+            const sButtonType = this.mpTypeFormatter();
+            // Variable para almacenar el tipo de mensaje a contar
+            let sMessageType;
 
-            switch(sHighSeverityIconType){
+            // Convierte el tipo de botón a tipo de mensaje
+            switch (sButtonType) {
                 case "Negative":
-                    sHighSeverityMessageType="Error"
+                    // Si el botón es Negative → contar mensajes de Error
+                    sMessageType = "Error";
                     break;
-
                 case "Critical":
-                    sHighSeverityMessageType="Warning"
+                    // Si el botón es Critical → contar mensajes de Warning
+                    sMessageType = "Warning";
                     break;
-
-                case "Success ":
-                    sHighSeverityMessageType="Success"
+                case "Success":
+                    // Si el botón es Success → contar mensajes de Success
+                    sMessageType = "Success";
                     break;
-
                 default:
-                    sHighSeverityMessageType = !sHighSeverityMessageType ? "Information" : sHighSeverityMessageType;
-                    break;
+                    // Por defecto → contar mensajes de Information
+                    sMessageType = "Information";
             }
 
-            //this._MessageManager.getMessageModel().oData.reduce(function(iNumerOfMessage, oMessageItem){
-            //    return oMessageItem.type===sHighSeverityIconType? ++ iNumerOfMessage  : iNumerOfMessage;
-            //})
-
-            return this._MessageManager.getMessageModel().oData.reduce( //Array de mensajes donde cada mensaje tiene type: "Error" | "Warning" | "Success" | "Information"
-                function(iNumerOfMessage, oMessageItem){ //iNumerOfMessage es el acumulador (contador que arranca en 0) y oMessageItem es el mensaje actual (cada objeto del array)
-                    return oMessageItem.type === sHighSeverityIconType //¿El tipo de este mensaje es igual al tipo más grave detectado?
-                        ? ++iNumerOfMessage //Si el mensaje es del tipo buscado → sumo 1
-                        : iNumerOfMessage; //Si no → dejo el contador igual
+            // Usa reduce para contar mensajes del tipo más grave
+            // Array de mensajes donde cada mensaje tiene type: "Error" | "Warning" | "Success" | "Information"
+            return this._MessageManager.getMessageModel().oData.reduce(
+                function(iNumerOfMessage, oMessageItem){
+                    // iNumerOfMessage es el acumulador (contador que arranca en 0)
+                    // oMessageItem es el mensaje actual (cada objeto del array)
+                    
+                    // ¿El tipo de este mensaje es igual al tipo más grave detectado?
+                    return oMessageItem.type === sMessageType
+                        ? ++iNumerOfMessage // Si el mensaje es del tipo buscado → sumo 1
+                        : iNumerOfMessage; // Si no → dejo el contador igual
                 },
-                 0 //Valor inicial del contador
-                )  || ""; //Si el resultado final es 0, y no cambia, no muestra ningun numero en el boton
-            
+                0 // Valor inicial del contador (comienza en 0)
+            ) || ""; // Si el resultado final es 0, retorna string vacío (no muestra número en el botón)
         },
 
-        //Objeto del Evento (cuando se pulsa el boton)
-        //Me aseguro que la instancia del Messagge Popover esté creada antes de hacer el toggle
-        //Cuando se pulsa, muestra en detalle con toggle
-        handleMessagePopover: function(oEvent){
-            if(!this.oMP){
-                this.oMP.createMessagePopover();
+        /**
+         * =====================================================
+         * handleMessagePopover
+         * Abre o cierra el MessagePopover
+         * =====================================================
+         */
+        handleMessagePopover: function (oEvent) {
+            // Si el MessagePopover no existe, lo crea
+            if (!this.oMP) {
+                this.createMessagePopover();
             }
+            // Alterna la visibilidad del popover (abre si está cerrado, cierra si está abierto)
+            // El popover se posiciona relativamente al botón que disparó el evento
             this.oMP.toggle(oEvent.getSource());
-
         },
+
+
 
 
 
         //Campos Obligatorios -------------------------------------------------------------------------------------------
 
-        //el oInput no solo es el contenido, sino todas las propiedades del objeto
-        handleRequiredField: function(oInput){
-            var sTarget=oInput.getBindingContext().getPath() + "/" + oInput.getBindingPath("value");
+        /**
+         * =====================================================
+         * handleRequiredField
+         * Valida campos obligatorios
+         * =====================================================
+         */
+        handleRequiredField: function (oInput) {
 
-            //Logica para eliminar mensajes cuando se vuelve a validar (desde el target)
-            if(!oInput.getValue){
+            // Construye el target (ruta completa al campo en el modelo)
+            // Ejemplo: "/forms/0/name"
+            // getBindingContext().getPath() → "/forms/0"
+            // getBindingPath("value") → "name"
+            //El sTarget asocia el mensaje de error con un campo específico del modelo. Así el MessageManager sabe a qué campo pertenece cada error, qué input debe marcarse en rojo y donde hacer scroll cuando el usuario hace clic en el mensaje
+            const sTarget = //Es la ruta completa: "En el array forms, posición 0, propiedad name", por ejemplo
+                oInput.getBindingContext().getPath() +
+                "/" + //por ejemplo: "/forms/0"
+                oInput.getBindingPath("value"); //por ejemplo "name"
+
+            // Elimina cualquier mensaje previo asociado a este campo (evita duplicados)
+            this.removeMessageFromTarget(sTarget);
+
+            // Valida si el campo está vacío
+            if (!oInput.getValue()) {
+                // Agrega un nuevo mensaje de error al MessageManager
                 this._MessageManager.addMessages(
-                    new MessageItem({
-                        message: "A mandatory field required",
-                        type : MeesageType.Error,
-                        additionalText: oInput.getLabels()[0].getText(), //Le indico que tiene el error en el nombre
+                    new Message({
+                        // Texto del mensaje que se muestra al usuario
+                        message: "Mandatory field required",
+                        // Tipo de mensaje (Error aparece en rojo)
+                        type: MessageType.Error,
+                        // Texto adicional (nombre del campo, ej: "Email")
+                        // getLabels()[0] obtiene el primer label asociado al input
+                        additionalText: oInput.getLabels()[0].getText(),
+                        // Target: ruta al campo en el modelo (para asociar mensaje a campo específico)
                         target: sTarget,
+                        // Processor: el modelo que procesa este mensaje
                         processor: this.getView().getModel()
                     })
-                )
+                );
+            }
+        },
+
+        /**
+         * =====================================================
+         * removeMessageFromTarget
+         * Elimina mensajes asociados a un campo
+         * =====================================================
+         */
+        removeMessageFromTarget: function (sTarget) {
+            // Obtiene todos los mensajes actuales del MessageManager
+            this._MessageManager.getMessageModel().getData().forEach(
+                function (oMessage) {
+                    // Si el mensaje está asociado al target especificado
+                    if (oMessage.target === sTarget) {
+                        // Elimina ese mensaje del MessageManager
+                        this._MessageManager.removeMessages(oMessage);
+                    }
+                }.bind(this) // .bind(this) mantiene el contexto del controller
+            );
+        },
+
+        checkInputConstrains: function(group, oInput){
+            var oBinding=oInput.getBinding("value"),
+                sValueState="None", //Con esto puedo determinar si hay error en el campo o no (se cambia el estado si hay error),
+                message,
+                type,
+                description,
+                sTarget=oInput.getBindingContext().getPath() + "/" + oInput.getBindingPath("value");
+
+                // Elimina cualquier mensaje previo asociado a este campo (evita duplicados)
+                this.removeMessageFromTarget(sTarget);
+
+                switch(group){
+                    //Determino que mensaje mostrar en caso de error
+                    case "GR1":
+                        message= "Invalid email";
+                        type=MessageType.Error;
+                        description="The value of the email field should be a valid email adress";
+                        sValueState="Error";
+                        break;
+                    
+                    case "GR2":
+                        //Determino que mensaje mostrar en caso de warning
+                        message= "The value should not exceed 40";
+                        type=MessageType.Warning;
+                        description="The value of the working hours should no exceed 40 hours";
+                        sValueState="Warning";
+                        break;
+
+                    default:
+                        break;
+                }
+
+                try {
+                    //validateValue valida lo que se ingresa de acuerdo a las limitaciones del XML.
+                    //Si cumple la limitacion no levanta una excepcion 
+                    oBinding.getType().validateValue(oInput.getValue()); //me devuelve el valor del campo
+
+                    //Si no cumple la limitacion, se levanta una excepcion, la captura y lo añade en un mensaje en el XML con el MessageManager
+                } catch (oException) {
+                    this._MessageManager.addMessages(
+                        new Message({
+                            message: message,
+                            type: type,
+                            additionalText: oInput.getLabels()[0].getText(), //Texto de donde a saltado el mensaje
+                            description: description,
+                            target: sTarget,
+                            processor: this.getView().getModel()
+                        }),
+                    );
+
+                    oInput.setValueState(sValueState);
+                    
+                }
+
+        },
+
+        onChange: function(oEvent){
+            var oInput= oEvent.getSource();
+
+            //Si se trata de un campo obligatorio, que tiene required
+            if(oInput.getRequired){
+                //Debe llamar a la funcion handleRequiredField
+                this.handleRequiredField(oInput);
             }
 
+            //Si se trata de un campo change
+            if(oInput.getLabels()[0].getText() === "Weekly Hours"){ //si estos coiniciden
+                //Debe llamar a la funcion handleRequiredField
+                this.checkInputConstrains("GR2", oInput)
+            }else{
+                this.checkInputConstrains("GR1", oInput)
+            }
+
+
         }
+
     });
 });
